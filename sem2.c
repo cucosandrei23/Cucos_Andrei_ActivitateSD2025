@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<malloc.h>
+#include<string.h>
 
 struct Masina {
 	int id;
@@ -13,8 +14,13 @@ struct Masina initializare(int id, int nrKm, const char* model, float pret, char
 	struct Masina m;
 	m.id = id;
 	m.nrKm = nrKm;
-	m.model = (char*)malloc(strlen(model) + 1);
-	strcpy(m.model, model);
+	if (model != NULL) {
+		m.model = (char*)malloc(strlen(model) + 1);
+		strcpy_s(m.model, strlen(model) + 1, model);
+	}
+	else {
+		m.model = NULL;
+	}
 	m.pret = pret;
 	m.tipMotor = tipMotor;
 	return m;
@@ -32,7 +38,7 @@ void afisareVector(struct Masina* vector, int nrElemente) {
 	}
 }
 
-struct Masina* copiazaPrimeleNElemente(struct Masina* vector, int nrElemente, int *nrElementeCopiate) {
+struct Masina* copiazaPrimeleNElemente(struct Masina* vector, int nrElemente, int* nrElementeCopiate) {
 	struct Masina* vectorNou;
 	vectorNou = NULL;
 	if (vector != NULL && (*nrElementeCopiate) > 0) {
@@ -52,7 +58,7 @@ struct Masina* copiazaPrimeleNElemente(struct Masina* vector, int nrElemente, in
 void dezalocare(struct Masina** vector, int* nrElemente) {
 	//dezalocam elementele din vector si vectorul
 	for (int i = 0; i < (*nrElemente); i++) {
-		if((*vector)[i].model != NULL){
+		if ((*vector)[i].model != NULL) {
 			free((*vector)[i].model);
 		}
 	}
@@ -69,7 +75,7 @@ void copiazaMasiniIeftine(struct Masina* vector, char nrElemente, float prag, st
 			(*dimensiune) += 1;
 		}
 	}
-	
+
 	int k = 0;
 	*vectorNou = malloc(sizeof(struct Masina) * (*dimensiune));
 	for (int i = 0; i < nrElemente; i++) {
@@ -84,26 +90,29 @@ void copiazaMasiniIeftine(struct Masina* vector, char nrElemente, float prag, st
 }
 
 struct Masina getPrimulElementConditionat(struct Masina* vector, int nrElemente, const char* conditie) {
-	//trebuie cautat elementul care indeplineste o conditie
-	//dupa atributul de tip char*. Acesta este returnat.
 	struct Masina s;
-	s.id = 1;
-
+	s = initializare(0, 0, NULL, 0, NULL);
+	for (int i = 0; i < nrElemente; i++) {
+		if (strcmp(vector[i].model, conditie) == 0) {
+			s = initializare(vector[i].id, vector[i].nrKm, vector[i].model, vector[i].pret, vector[i].tipMotor);
+			return s;
+		}
+	}
 	return s;
 }
-	
+
 
 
 int main() {
 	int n = 3;
-	struct Masina *vec;
+	struct Masina* vec;
 	vec = malloc(sizeof(struct Masina) * n);
 	vec[0] = initializare(10, 100000, "Logan", 1000.4, 'd');
 	vec[1] = initializare(11, 1000, "Passat", 2500.4, 'b');
 	vec[2] = initializare(12, 25464, "Cyber Truck", 1000.0, 'e');
 	afisareVector(vec, n);
 	int nrElemCopiat = 5;
-	struct Masina *vecNou = copiazaPrimeleNElemente(vec, n, &nrElemCopiat);
+	struct Masina* vecNou = copiazaPrimeleNElemente(vec, n, &nrElemCopiat);
 	printf("Elementele copiate:\n");
 	afisareVector(vecNou, nrElemCopiat);
 
@@ -112,8 +121,11 @@ int main() {
 	copiazaMasiniIeftine(vec, n, 1500, &vecNou, &nrElemCopiat);
 	afisareVector(vecNou, nrElemCopiat);
 
-	dezalocare(&vecNou, &nrElemCopiat);
-	dezalocare(&vec, &n);
+	/*dezalocare(&vecNou, &nrElemCopiat);
+	dezalocare(&vec, &n);*/
 
+	afisareVector(vec, n);
+	struct Masina m = getPrimulElementConditionat(vec, n, "logan");
+	afisare(m);
 	return 0;
 }
