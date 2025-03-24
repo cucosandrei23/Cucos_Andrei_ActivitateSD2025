@@ -21,5 +21,11 @@
     <ClCompile Include="sem2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sem3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sem4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
