@@ -18,13 +18,7 @@ typedef struct StructuraMasina Masina;
 
 void afisareMasina(Masina masina) {
 	//afiseaza toate atributele unei masini
-	printf("id: %d\n", masina.id);
-	printf("nrUsi: %d\n", masina.nrUsi);
-	printf("float: %f\n", masina.pret);
-	printf("model: %s\n", masina.model);
-	printf("numeSofer: %s\n", masina.numeSofer);
-	printf("serie: %c\n\n", masina.serie);
-
+	printf("Id: %d\nNr usi: %d\nPret %.2f\nModel %s\nNumeSofer %s\nserie %c\n", masina.id, masina.nrUsi, masina.pret, masina.model, masina.numeSofer, masina.serie);
 }
 
 void afisareVectorMasini(Masina* masini, int nrMasini) {
@@ -35,16 +29,18 @@ void afisareVectorMasini(Masina* masini, int nrMasini) {
 	}
 }
 
-void adaugaMasinaInVector(Masina** masini, int* nrMasini, Masina masinaNoua) {
+void adaugaMasinaInVector(Masina** masini, int * nrMasini, Masina masinaNoua) {
 	//adauga in vectorul primit o noua masina pe care o primim ca parametru
 	//ATENTIE - se modifica numarul de masini din vector;
-	Masina* aux = (Masina*)malloc(sizeof(Masina*) * ((*nrMasini) + 1));
+	Masina* aux = (Masina*)malloc(sizeof(Masina) * ((*nrMasini) + 1));
 	for (int i = 0; i < (*nrMasini); i++) {
 		aux[i] = (*masini)[i];
+		aux[i].numeSofer = (*masini)[i].numeSofer;
+		aux[i].model = (*masini)[i].model;
 	}
-	(*nrMasini)++;
-	aux[(*nrMasini)] = masinaNoua;
 
+	aux[(*nrMasini)] = masinaNoua;
+	(*nrMasini)++;
 	free(*masini);
 	(*masini) = aux;
 }
@@ -52,50 +48,52 @@ void adaugaMasinaInVector(Masina** masini, int* nrMasini, Masina masinaNoua) {
 Masina citireMasinaFisier(FILE* file) {
 	//functia citeste o masina dintr-un strceam deja deschis
 	//masina citita este returnata;
-	Masina m;
-	char sep[3] = ",\n";
-	char* line[101];
+	Masina temp;
+
+	char sep[3] = "\n,";
+	char line[100];
 	fgets(line, 100, file);
-	m.id=atoi(strtok(line, sep));
-	m.nrUsi = atoi(strtok(NULL, sep));
-	m.pret = atof(strtok(NULL, sep));
-
+	temp.id = atoi(strtok(line, sep));
+	temp.nrUsi = atoi(strtok(NULL, sep));
+	temp.pret = atof(strtok(NULL, sep));
 	char* buffer = strtok(NULL, sep);
-	m.model = (char*)malloc(sizeof(char) * (strlen(buffer) + 1));
-	strcpy_s(m.model, (strlen(buffer) + 1), buffer);
+	temp.model = (char*)malloc(strlen(buffer) + 1);
+	strcpy(temp.model, buffer);
+	buffer = strtok(NULL, sep);
+	temp.numeSofer = (char*)malloc(strlen(buffer) + 1);
+	strcpy(temp.numeSofer, buffer);
+	temp.serie = strtok(NULL, sep)[0];
+	return temp;
 
-	buffer = strtok(NULL, sep);
-	m.numeSofer = (char*)malloc(sizeof(char) * (strlen(buffer) + 1));
-	strcpy_s(m.numeSofer, (strlen(buffer) + 1), buffer);
-	
-	buffer = strtok(NULL, sep);
-	m.serie = buffer[0];
-	
-	return m;
 }
 
 Masina* citireVectorMasiniFisier(const char* numeFisier, int* nrMasiniCitite) {
-	//functia primeste numele fisierului, il deschide si citeste toate masinile din fisier
-	//prin apelul repetat al functiei citireMasinaFisier()
-	//numarul de masini este determinat prin numarul de citiri din fisier
-	//ATENTIE - la final inchidem fisierul/stream-ul
-	Masina* masini = NULL;
-	FILE* file = fopen(numeFisier, "r");
-	while (!feof(file)) {
-		adaugaMasinaInVector(&masini, nrMasiniCitite, citireMasinaFisier(file));
+	FILE* f = fopen("masini.txt", "r");
+	Masina* vectorNou = NULL;
+	while (!feof(f)) {
+		adaugaMasinaInVector(&vectorNou, nrMasiniCitite, citireMasinaFisier(f));
 	}
-	fclose(file);
-	return masini;
 
+	fclose(f);
+	return vectorNou;
 }
 
 void dezalocareVectorMasini(Masina** vector, int* nrMasini) {
 	//este dezalocat intreg vectorul de masini
+	for (int i = 0; i < (*nrMasini); i++) {
+		free((*vector)[i].model);
+		free((*vector)[i].numeSofer);
+	}
+	free(*vector);
+	(*vector) = NULL;
+	*nrMasini = 0;
 }
 
 int main() {
-	int nr = 0;
-	Masina* masini = NULL;
-
+	int nrMasini = 0;
+	Masina* vector = citireVectorMasiniFisier("masini.txt", &nrMasini);
+	afisareVectorMasini(vector, nrMasini);
+	dezalocareVectorMasini(&vector, &nrMasini);
+	afisareVectorMasini(vector, nrMasini);
 	return 0;
 }
