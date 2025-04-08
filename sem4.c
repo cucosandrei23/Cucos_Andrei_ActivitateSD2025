@@ -6,8 +6,6 @@
 //trebuie sa folositi fisierul masini.txt
 //sau va creati un alt fisier cu alte date
 
-
-
 struct StructuraMasina {
 	int id;
 	int nrUsi;
@@ -17,16 +15,15 @@ struct StructuraMasina {
 	unsigned char serie;
 };
 typedef struct StructuraMasina Masina;
-typedef struct nod nod; 
 
-//creare structura pentru un nod dintr-o lista simplu inlantuita
+typedef struct Nod Nod;
 
-struct nod {
+struct Nod {
 	Masina info;
-	nod* next;
+	Nod* next;
 };
 
-
+//creare structura pentru un nod dintr-o lista simplu inlantuita
 
 Masina citireMasinaDinFisier(FILE* file) {
 	char buffer[100];
@@ -37,7 +34,7 @@ Masina citireMasinaDinFisier(FILE* file) {
 	aux = strtok(buffer, sep);
 	m1.id = atoi(aux);
 	m1.nrUsi = atoi(strtok(NULL, sep));
-	m1.pret = atof(strtok(NULL, sep));
+	m1.pret= atof(strtok(NULL, sep));
 	aux = strtok(NULL, sep);
 	m1.model = malloc(strlen(aux) + 1);
 	strcpy_s(m1.model, strlen(aux) + 1, aux);
@@ -59,80 +56,108 @@ void afisareMasina(Masina masina) {
 	printf("Serie: %c\n\n", masina.serie);
 }
 
-void afisareListaMasini(nod* cap) {
+void afisareListaMasini(Nod*cap) {
 	while (cap != NULL) {
 		afisareMasina(cap->info);
 		cap = cap->next;
 	}
-	
 }
 
-void adaugaMasinaInLista(nod** cap, Masina masinaNoua) {
-	nod* nou = malloc(sizeof(nod));
-	nou->info = masinaNoua;
-	nou->next = NULL;
-	if ((*cap) != NULL) {
-		nod* aux = (*cap);
-		while (aux->next != NULL) {
-			aux = aux->next;
-		}
-		aux->next = nou;
+void adaugaMasinaInLista(Nod**cap, Masina masinaNoua) {
+	//adauga la final in lista primita o noua masina pe care o primim ca parametru
+	Nod* aux = malloc(sizeof(Nod));
+	aux->info = masinaNoua;
+	aux->next = NULL;
+	if ((*cap) == NULL) {
+		(*cap) = aux;
 	}
 	else {
-		(*cap) = nou;
+		Nod* temp = (*cap);
+		while (temp->next != NULL) {
+			temp = temp->next;
+		}
+		(*cap) = aux;
 	}
-	
 
 }
 
-void adaugaLaInceputInLista(nod** cap, Masina masinaNoua) {
+void adaugaLaInceputInLista(Nod **cap, Masina masinaNoua) {
 	//adauga la inceputul listei o noua masina pe care o primim ca parametru
-	nod* nou = malloc(sizeof(nod));
-	nou->info = masinaNoua;
-	nou->next = cap;
-	(*cap) = nou;
+	Nod* aux = malloc(sizeof(Nod));
+	aux->info = masinaNoua;
+	if ((*cap) == NULL) {
+		(*cap) = aux;
+		(*cap)->next = NULL;
+	}
+	else {
+		aux->next = (*cap);
+		(*cap) = aux;
+	}
 }
 
-nod* citireListaMasiniDinFisier(const char* numeFisier) {
-	FILE* f = fopen(numeFisier, "r");
-	nod* cap = NULL; 
+void* citireListaMasiniDinFisier(const char* numeFisier) {
+	//functia primeste numele fisierului, il deschide si citeste toate masinile din fisier
+	//prin apelul repetat al functiei citireMasinaDinFisier()
+	//ATENTIE - la final inchidem fisierul/stream-ul
+	FILE* f = fopen("masini.txt", "r");
+	Nod* cap = NULL;
 	while (!feof(f)) {
-		Masina m;
-		m = citireMasinaDinFisier(f);
-		adaugaMasinaInLista(&cap, m);
+		adaugaMasinaInLista(&cap, citireMasinaDinFisier(f));
 	}
-	fclose(f);
+	fclose("f");
 	return cap;
 }
 
-void dezalocareListaMasini(nod ** cap) {
-	while((*cap) != NULL) {
-		nod* temp;
-		temp = (*cap)->next;
+void dezalocareListaMasini(Nod ** cap) {
+	//sunt dezalocate toate masinile si lista de elemente
+	while ((*cap)->next != NULL) {
+		Nod* temp = (*cap)->next;
 		free((*cap)->info.model);
 		free((*cap)->info.numeSofer);
+		free((*cap));
 		(*cap) = temp;
 	}
-
 }
 
-float calculeazaPretMediu(nod* cap) {
-	float suma = 0;
-	int k = 0;
-	while (cap != NULL) {
-		suma += cap->info.pret;
-		k++;
-		cap = cap->next;
+float calculeazaPretMediu(Nod *cap) {
+	//calculeaza pretul mediu al masinilor din lista.
+	if (cap != NULL) {
+		float val = 0;
+		int nrMasini = 0;
+		while (cap->next != NULL) {
+			val += cap->info.pret;
+			cap = cap->next;
+			nrMasini++;
+		}
+		return val / nrMasini;
 	}
-	if (k == 0) {
-		return 0;
+	else {
+		return -1;
 	}
-	return suma/k;
 }
 
-void stergeMasiniDinSeria(/*lista masini*/ char serieCautata) {
+void stergeMasiniDinSeria(Nod **cap, char serieCautata) {
 	//sterge toate masinile din lista care au seria primita ca parametru.
 	//tratati situatia ca masina se afla si pe prima pozitie, si pe ultima pozitie
+	if ((*cap)->info.serie == serieCautata) {
+		Nod* aux = (*cap)->next;
+		free(aux->info.numeSofer);
+		free(aux->info.model);
+		free(aux);
+		(*cap) = aux;
+	}
+	
+	while ((*cap)->next->next != NULL) {
+		if ((*cap)->next->info.serie == serieCautata) {
+			free((*cap)->next->info.numeSofer);
+			free((*cap)->next->info.model);
+			free((*cap)->next);
+			(*cap)->next = (*cap)->next->next;
+		}
+		(*cap) = (*cap)->next;
+	}
+
+
 }
 
 float calculeazaPretulMasinilorUnuiSofer(/*lista masini*/ const char* numeSofer) {
@@ -141,11 +166,7 @@ float calculeazaPretulMasinilorUnuiSofer(/*lista masini*/ const char* numeSofer)
 }
 
 int main() {
-	nod* cap = citireListaMasiniDinFisier("masini.txt");
-	afisareListaMasini(cap);
-	float medie = calculeazaPretMediu(cap);
-	printf("Medie %f", medie);
 
-	dezalocareListaMasini(&cap);
+
 	return 0;
 }
